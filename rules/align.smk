@@ -27,6 +27,27 @@ rule align:
         # optional parameters
         extra="--quantMode GeneCounts --sjdbGTFfile {} {}".format(
               config["ref"]["annotation"], config["params"]["star"])
-    threads: 24
+    threads: 1
+    conda:
+        "../envs/my_star.yaml"
     wrapper:
         "0.19.4/bio/star/align"
+
+
+rule test_align:
+    input:
+        "pippo"
+    output:
+        "pluto"
+    shell:
+        "STAR --version > {output} "
+
+
+rule all_align:
+	input:
+		expand("star/{unit.sample}-{unit.unit}/Aligned.out.bam", unit=units.itertuples()),
+		expand("star/{unit.sample}-{unit.unit}/ReadsPerGene.out.tab", unit=units.itertuples())
+	output:
+		"all_align.done"
+	shell:
+		"touch {output}"

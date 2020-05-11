@@ -1,5 +1,40 @@
 ## RSEQC
 
+### added for fastQCs
+#input_folder= "/IMCR_shares/Moorlab/simo/170714_NB501465_0132_AH25MKBGX3/dhd1"
+
+# also works (for fastqc rule):
+#def get_fastq(wildcards):
+#    return input_folder + "/" + fq_files.loc[(wildcards.fastq_name_base), [ "fastq_name" ]].dropna()
+
+
+rule my_fastqc:
+# I want to keep units separated, in case of multiple runs etc
+    input:
+       #get_fastq
+        input_folder + "/{fastq_name_base}.fastq.gz"
+    output:
+        html="qc/fastqc/{fastq_name_base}_fastqc.html",
+        zip="qc/fastqc/{fastq_name_base}_fastqc.zip"
+    params: ""
+    log:
+        "logs/fastqc/{fastq_name_base}.log"
+    conda:
+        "../envs/my_fastqc.yaml"
+    wrapper:
+        "0.51.3/bio/fastqc"
+
+rule all_my_fastqc:
+	input:
+		expand("qc/fastqc/{fastq_name_base.fastq_name_base}_fastqc.html", fastq_name_base=fq_files.itertuples()),
+		expand("qc/fastqc/{fastq_name_base.fastq_name_base}_fastqc.zip", fastq_name_base=fq_files.itertuples())
+	output:
+		"all_fastqc.done"
+	shell:
+		"touch {output}"
+
+
+#########
 rule rseqc_gtf2bed:
     input:
         config["ref"]["annotation"]
@@ -145,7 +180,7 @@ rule rseqc_readgc:
         "read_GC.py -i {input} -o {params.prefix} > {log} 2>&1"
         
 
-rule multiqc:
+rule rseqc_multiqc:
     input:
         expand("star/{unit.sample}-{unit.unit}/Aligned.out.bam", unit=units.itertuples()),
         expand("qc/rseqc/{unit.sample}-{unit.unit}.junctionanno.junction.bed", unit=units.itertuples()),
@@ -158,8 +193,38 @@ rule multiqc:
         expand("qc/rseqc/{unit.sample}-{unit.unit}.readgc.GC_plot.pdf", unit=units.itertuples()),
         expand("logs/rseqc/rseqc_junction_annotation/{unit.sample}-{unit.unit}.log", unit=units.itertuples())
     output:
-        "qc/multiqc_report.html"
+        "qc/rseqc/rseqc_multiqc_report.html",
+        "qc/rseqc/rseqc_multiqc_data/"
     log:
-        "logs/multiqc.log"
+        "logs/rseqc_multiqc.log"
+    conda:
+        "../envs/my_multiqc.yaml"
     wrapper:
-        "0.31.1/bio/multiqc"
+        "0.51.3/bio/multiqc"
+
+rule final_multiqc:
+    input:
+        expand("star/{unit.sample}-{unit.unit}/Aligned.out.bam", unit=units.itertuples()),
+        expand("qc/rseqc/{unit.sample}-{unit.unit}.junctionanno.junction.bed", unit=units.itertuples()),
+        expand("qc/rseqc/{unit.sample}-{unit.unit}.junctionsat.junctionSaturation_plot.pdf", unit=units.itertuples()),
+        expand("qc/rseqc/{unit.sample}-{unit.unit}.infer_experiment.txt", unit=units.itertuples()),
+        expand("qc/rseqc/{unit.sample}-{unit.unit}.stats.txt", unit=units.itertuples()),
+        expand("qc/rseqc/{unit.sample}-{unit.unit}.inner_distance_freq.inner_distance.txt", unit=units.itertuples()),
+        expand("qc/rseqc/{unit.sample}-{unit.unit}.readdistribution.txt", unit=units.itertuples()),
+        expand("qc/rseqc/{unit.sample}-{unit.unit}.readdup.DupRate_plot.pdf", unit=units.itertuples()),
+        expand("qc/rseqc/{unit.sample}-{unit.unit}.readgc.GC_plot.pdf", unit=units.itertuples()),
+        expand("logs/rseqc/rseqc_junction_annotation/{unit.sample}-{unit.unit}.log", unit=units.itertuples()),
+	# I thought the parsed files in 'qc/rseqc/rseqc_multiqc_data/' could be used as input but I was wrong
+	expand("qc/fastqc/{fastq_name_base.fastq_name_base}_fastqc.zip", fastq_name_base=fq_files.itertuples()),
+        expand("trimmed/{unit.sample}-{unit.unit}.qc.txt", unit=units.itertuples()),
+        expand("star/{unit.sample}-{unit.unit}/Aligned.out.bam", unit=units.itertuples()),
+        expand("feature_counts/{unit.sample}-{unit.unit}.counts.summary", unit=units.itertuples())
+    output:
+        "qc/final_multiqc_report.html"
+    log:
+        "logs/final_multiqc.log"
+    conda:
+        "../envs/my_multiqc.yaml"
+    wrapper:
+        "0.51.3/bio/multiqc"
+

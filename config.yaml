@@ -1,5 +1,5 @@
 # path or URL to sample sheet (TSV format, columns: sample, condition, ...)
-samples: samples.tsv
+samples: /data/projects/tbx3/local/share/data/metadata_dhd1_samples
 # path or URL to sequencing unit sheet (TSV format, columns: sample, unit, fq1, fq2, 
 # strandedness). Units are technical replicates (e.g. lanes, or resequencing of the 
 # same biological sample).If the column "strandedness" is present (which is optional), 
@@ -7,19 +7,26 @@ samples: samples.tsv
 # protocols, yes an reverse follow the nomenclature used in `htseq-count --reverse` 
 # which is referenced in STAR manual section 7, "Counting number of reads per gene".
 
-units: units.tsv
+# what if there are more units to a single sample? shouldn't they be merged prior to counting??
+units: /data/projects/tbx3/local/share/data/units_dhd1.tsv
+
+fq_files: /data/projects/tbx3/local/share/data/metadata_dhd1_files
+
+#input_folder: /IMCR_shares/Moorlab/simo/170714_NB501465_0132_AH25MKBGX3/dhd1/
 
 trimming:
   # skip trimming: false or true
   skip: false
   # the sequencing adapter
-  adapter: ACGGATCGATCGATCGATCGAT
+  # from https://international.neb.com/faqs/2018/04/19/how-should-the-adaptor-sequences-be-trimmed -> NEBNext Template Switching Oligo -> GCTAATCATTGCAAGCAGTGGTATCAACGCAGAGTACAT
+  adapter: AGATCGGAAGAG
+#ACGGATCGATCGATCGATCGAT
 
 ref:
   # the STAR index
-  index: "path/to/star/index"
+  index: "/data/references/gencode/mmusculus/STAR"
   # gtf file with transcripts
-  annotation: "path/to/annotation.gtf"
+  annotation: "/data/references/gencode/mmusculus/gencode.vM24.basic.annotation.gtf"
 
 pca:
   labels:
@@ -27,11 +34,11 @@ pca:
     - condition
 
 diffexp:
-  # contrasts for the deseq2 results method
+        # contrasts for the deseq2 results method # initial comparison: hem_dhd1 vs exp_dhd1
   contrasts:
-    treated-vs-untreated:
-      - treated
-      - untreated
+    hem-vs-exp:
+      - hem
+      - exp
 
 params:
   star: ""
